@@ -1,0 +1,24 @@
+# 📦 Dependencies (These are very large)
+node_modules/
+dashboard-ui/node_modules/
+demo/node_modules/
+ml_service/node_modules/
+
+# 🐍 Python Environment & Cache
+tf_env/
+__pycache__/
+.ipynb_checkpoints/
+
+# ☕ Java Build Files
+target/
+.mvn/
+*.jar
+
+# 🖥️ IDE and System Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 🗄️ Database (Keep your data local)
+netshield.db

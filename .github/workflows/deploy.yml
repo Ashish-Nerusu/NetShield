@@ -1,0 +1,59 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/netshield
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set tags
+        id: vars
+        run: |
+          echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "LATEST=latest" >> $GITHUB_OUTPUT
+
+      - name: Build and push Gatekeeper
+        uses: docker/build-push-action@v6
+        with:
+          context: ./demo
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-gatekeeper:${{ steps.vars.outputs.TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-gatekeeper:latest
+
+      - name: Build and push AI
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ml_service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-ai:${{ steps.vars.outputs.TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-ai:latest
+
+      - name: Build and push Dashboard
+        uses: docker/build-push-action@v6
+        with:
+          context: ./dashboard-ui
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dashboard:${{ steps.vars.outputs.TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dashboard:latest

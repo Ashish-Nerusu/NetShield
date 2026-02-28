@@ -1,0 +1,46 @@
+.dark-theme {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 40px;
+}
+
+header { text-align: center; margin-bottom: 40px; }
+h1 { color: #58a6ff; font-size: 2.5rem; }
+
+.container { max-width: 800px; margin: 0 auto; }
+
+.upload-card, .result-card {
+  background: #161b22;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid #30363d;
+  margin-bottom: 20px;
+}
+
+.input-group { margin-bottom: 20px; display: flex; flex-direction: column; }
+label { margin-bottom: 8px; font-weight: bold; }
+
+select, input, button {
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: white;
+  font-size: 1rem;
+}
+
+button {
+  background-color: #238636;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+button:hover { background-color: #2ea043; }
+
+.result-card.alert { border-left: 10px solid #f85149; }
+.result-card.safe { border-left: 10px solid #3fb950; }
+
+.stats { display: flex; gap: 40px; margin: 20px 0; font-size: 1.2rem; }

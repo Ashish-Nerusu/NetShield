@@ -1,0 +1,42 @@
+version: "3.9"
+services:
+  gatekeeper:
+    build: ./demo
+    container_name: netshield-gatekeeper
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:sqlite:/data/netshield.db
+      - APP_CORS_ALLOWED_ORIGINS=${APP_CORS_ALLOWED_ORIGINS:-http://localhost:8080}
+      - FASTAPI_BASE_URL=http://ai:8000
+    ports:
+      - "9091:9091"
+    volumes:
+      - netshield-db:/data
+    depends_on:
+      - ai
+    networks:
+      - netshield
+
+  ai:
+    build: ./ml_service
+    container_name: netshield-ai
+    ports:
+      - "8000:8000"
+    networks:
+      - netshield
+
+  dashboard:
+    build: ./dashboard-ui
+    container_name: netshield-dashboard
+    environment:
+      - REACT_APP_API_BASE=${REACT_APP_API_BASE:-http://localhost:9091}
+    ports:
+      - "8080:80"
+    networks:
+      - netshield
+
+volumes:
+  netshield-db:
+
+networks:
+  netshield:
+    driver: bridge
