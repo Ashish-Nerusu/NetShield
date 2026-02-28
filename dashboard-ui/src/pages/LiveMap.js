@@ -6,8 +6,7 @@ import 'leaflet/dist/leaflet.css';
 function LiveMap() {
   const [attacks, setAttacks] = useState([]);
   const [live, setLive] = useState([]);
-  const [home, setHome] = useState({ lat: 12.9716, lng: 77.5946 }); // Bengaluru as default
-
+const [home] = useState({ lat: 12.9716, lng: 77.5946 });
   useEffect(() => {
     const run = async () => {
       const res = await axios.get('http://localhost:9091/api/netshield/history');
