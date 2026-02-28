@@ -1,21 +1,35 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 
+// ✅ Set your Render Gatekeeper backend URL here
+const API_BASE_URL = "https://netshield-gatekeeper.onrender.com";
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('netshield_token') || '');
   const [user, setUser] = useState(() => {
     const u = localStorage.getItem('netshield_user');
-    try { return u ? JSON.parse(u) : null; } catch { return null; }
+    try { 
+      return u ? JSON.parse(u) : null; 
+    } catch { 
+      return null; 
+    }
   });
+
   const isLoggedIn = !!token;
 
+  // Attach token automatically to every request
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
-      delete axios.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['Authorization'];
     }
   }, [token]);
 
@@ -34,7 +48,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ token, user, isLoggedIn, login, logout, api }}>
       {children}
     </AuthContext.Provider>
   );
