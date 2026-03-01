@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @CrossOrigin(
-        origins = "https://your-vercel-url.vercel.app",
+        origins = "https://net-shield-gules.vercel.app",
         allowedHeaders = "*",
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE},
         allowCredentials = "true"
