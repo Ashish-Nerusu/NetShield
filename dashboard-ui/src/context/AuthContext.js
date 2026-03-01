@@ -1,13 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
-
-// ✅ Set your Render Gatekeeper backend URL here
-const API_BASE_URL = "https://netshield-gatekeeper.onrender.com";
+import { API_BASE } from '../shared/api';
 
 // Create axios instance
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
+const api = axios.create({ baseURL: API_BASE });
 
 const AuthContext = createContext(null);
 

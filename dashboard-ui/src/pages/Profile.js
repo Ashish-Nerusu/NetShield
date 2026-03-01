@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../shared/api';
 
 function Gauge({ value }) {
   const pct = Math.max(0, Math.min(100, Math.round(value)));
@@ -25,11 +26,11 @@ function Profile() {
     const run = async () => {
       setLoading(true);
       try {
-        const me = await axios.get('http://localhost:9091/api/auth/me');
+        const me = await axios.get(`${API_BASE}/api/auth/me`);
         setUser(me.data);
       } catch {}
       try {
-        const hist = await axios.get('http://localhost:9091/api/netshield/history');
+        const hist = await axios.get(`${API_BASE}/api/netshield/history`);
         setRows(hist.data || []);
       } catch {}
       setLoading(false);

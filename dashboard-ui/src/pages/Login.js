@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../shared/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,7 +14,7 @@ function Login() {
   const submit = async () => {
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:9091/api/auth/login', { username: login, password });
+      const res = await axios.post(`${API_BASE}/api/auth/login`, { username: login, password });
       setAuth(res.data.token, res.data.user);
       navigate('/dashboard', { replace: true });
     } catch (e) {

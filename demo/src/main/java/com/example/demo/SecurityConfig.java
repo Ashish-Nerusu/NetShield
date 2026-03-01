@@ -39,7 +39,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(java.util.Arrays.asList(allowedOrigins.split(",")));
+        java.util.List<String> patterns = new java.util.ArrayList<>();
+        for (String s : allowedOrigins.split(",")) {
+            String t = s.trim();
+            if (!t.isEmpty()) patterns.add(t);
+        }
+        patterns.add("http://localhost:*");
+        patterns.add("http://127.0.0.1:*");
+        patterns.add("https://localhost:*");
+        patterns.add("https://127.0.0.1:*");
+        config.setAllowedOriginPatterns(patterns);
         config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true);

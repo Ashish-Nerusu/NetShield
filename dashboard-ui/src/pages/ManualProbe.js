@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../shared/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 function ManualProbe() {
@@ -26,7 +27,7 @@ function ManualProbe() {
       prio: Number(form.prio || 0)
     };
     try {
-      const res = await axios.post('http://localhost:9091/api/netshield/analyze-manual', payload);
+      const res = await axios.post(`${API_BASE}/api/netshield/analyze-manual`, payload);
       setResult(res.data);
     } catch (err) {
       const msg = (err.response && (err.response.data?.detail || err.response.data)) || err.message;
@@ -43,7 +44,7 @@ function ManualProbe() {
       prio: Number(form.prio || 0)
     };
     try {
-      const res = await axios.post('http://localhost:9091/api/netshield/explain-manual', payload);
+      const res = await axios.post(`${API_BASE}/api/netshield/explain-manual`, payload);
       const imp = res.data.importances || {};
       const data = Object.keys(imp).map((k) => ({ name: k, value: Math.round(imp[k] * 100) }));
       data.sort((a,b) => b.value - a.value);

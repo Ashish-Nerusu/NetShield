@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../shared/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 function Explain() {
@@ -10,7 +11,7 @@ function Explain() {
   const run = async () => {
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:9091/api/netshield/explain-manual', form);
+      const res = await axios.post(`${API_BASE}/api/netshield/explain-manual`, form);
       const imps = res.data.importances || {};
       const arr = Object.entries(imps).map(([name, value]) => ({ name, value }));
       arr.sort((a,b) => b.value - a.value);
