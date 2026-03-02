@@ -41,8 +41,9 @@ public class TrafficController {
     private PasswordEncoder encoder;
 
     private final String aiBase =
-            Optional.ofNullable(System.getenv("FASTAPI_BASE_URL"))
-                    .orElse("http://localhost:8003");
+            Optional.ofNullable(System.getenv("AI_ENGINE_URL"))
+                    .orElse(Optional.ofNullable(System.getenv("FASTAPI_BASE_URL"))
+                            .orElse("http://localhost:8003"));
 
     // ================= HEALTH =================
 

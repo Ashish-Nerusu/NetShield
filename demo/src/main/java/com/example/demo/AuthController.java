@@ -11,6 +11,12 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(
+        origins = "https://net-shield-gules.vercel.app",
+        allowedHeaders = "*",
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.OPTIONS},
+        allowCredentials = "true"
+)
 public class AuthController {
     @Autowired private UserRepository users;
     @Autowired private PasswordEncoder encoder;

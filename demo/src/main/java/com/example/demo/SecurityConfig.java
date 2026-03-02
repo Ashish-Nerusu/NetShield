@@ -49,8 +49,8 @@ public class SecurityConfig {
         patterns.add("https://localhost:*");
         patterns.add("https://127.0.0.1:*");
         config.setAllowedOriginPatterns(patterns);
-        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS", "PUT", "DELETE"));
+        config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
