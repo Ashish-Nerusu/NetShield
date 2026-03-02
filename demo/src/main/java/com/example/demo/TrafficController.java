@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 @CrossOrigin(
         origins = "https://net-shield-gules.vercel.app",
         allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE},
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
         allowCredentials = "true"
 )
 @RestController
@@ -50,6 +50,36 @@ public class TrafficController {
     @GetMapping("/health")
     public ResponseEntity<?> health() {
         return ResponseEntity.ok(Map.of("status", "up", "bridge", "Gatekeeper"));
+    }
+
+    private RestTemplate client() {
+        var f = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        f.setConnectTimeout(30000);
+        f.setReadTimeout(90000);
+        return new RestTemplate(f);
+    }
+
+    private <T> ResponseEntity<T> postWithRetry(String url, HttpEntity<?> req, Class<T> type) throws InterruptedException {
+        int attempts = 0;
+        Exception last = null;
+        while (attempts < 3) {
+            attempts++;
+            try {
+                return client().postForEntity(url, req, type);
+            } catch (org.springframework.web.client.HttpServerErrorException e) {
+                last = e;
+                if (e.getStatusCode() == HttpStatus.BAD_GATEWAY || e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
+                    Thread.sleep(attempts * 2000L);
+                    continue;
+                }
+                throw e;
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                last = e;
+                Thread.sleep(attempts * 2000L);
+            }
+        }
+        if (last instanceof RuntimeException) throw (RuntimeException) last;
+        throw new RuntimeException(last != null ? last.getMessage() : "Upstream error");
     }
 
     // ================= HISTORY =================
@@ -104,8 +134,6 @@ public class TrafficController {
 
         try {
 
-            RestTemplate rt = new RestTemplate();
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
@@ -124,7 +152,7 @@ public class TrafficController {
                     new HttpEntity<>(body, headers);
 
             ResponseEntity<Map> response =
-                    rt.postForEntity(aiBase + "/analyze/sdn/ml", req, Map.class);
+                    postWithRetry(aiBase + "/analyze/sdn/ml", req, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
 
@@ -161,9 +189,38 @@ public class TrafficController {
     }
 
     // ================= AUTH =================
+    // ================= MANUAL ANALYSIS =================
+
+    @PostMapping("/analyze-manual")
+    public ResponseEntity<?> analyzeManual(@RequestBody Map<String, Object> payload) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> req = new HttpEntity<>(payload, headers);
+            ResponseEntity<Map> response = postWithRetry(aiBase + "/analyze-manual", req, Map.class);
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("detail", "Gatekeeper Error: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/explain-manual")
+    public ResponseEntity<?> explainManual(@RequestBody Map<String, Object> payload) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> req = new HttpEntity<>(payload, headers);
+            ResponseEntity<Map> response = postWithRetry(aiBase + "/explain-manual", req, Map.class);
+            return response;
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("detail", "Gatekeeper Error: " + e.getMessage()));
+        }
+    }
+
 
     @PostMapping("/auth/signup")
     public ResponseEntity<?> signup(@RequestBody Map<String, String> payload) {
+
 
         String username = payload.getOrDefault("username", "").trim();
         String email = payload.getOrDefault("email", "").trim();
