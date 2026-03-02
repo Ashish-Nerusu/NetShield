@@ -12,4 +12,4 @@ VOLUME ["/data"]
 ENV SPRING_DATASOURCE_URL=jdbc:sqlite:/data/netshield.db
 ENV APP_CORS_ALLOWED_ORIGINS=http://localhost:8080
 EXPOSE 9091
-ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -Dserver.port=${PORT:-9091} -jar /app/app.jar"]
