@@ -22,7 +22,7 @@ function Layout({ children }) {
                 <span style={{ display: 'inline-block', width: 24, height: 24, borderRadius: 12, background: '#3fb950' }}></span>
               </button>
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', background: '#1f2328', border: '1px solid #2e3440', borderRadius: 8, padding: 8, zIndex: 10 }}>
+                <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: 'rgba(15,19,26,0.96)', border: '1px solid #2e3440', borderRadius: 10, padding: 8, zIndex: 9999, backdropFilter: 'none', boxShadow: '0 10px 24px rgba(0,0,0,0.35)' }}>
                   <div style={{ padding: '6px 10px', cursor: 'pointer' }} onClick={() => { setMenuOpen(false); navigate('/profile'); }}>View Profile</div>
                   <div style={{ padding: '6px 10px', cursor: 'pointer' }} onClick={() => { setMenuOpen(false); navigate('/settings'); }}>Account Settings</div>
                   <div style={{ padding: '6px 10px', cursor: 'pointer', color: '#f85149' }} onClick={() => { setMenuOpen(false); logout(); navigate('/login'); }}>Logout</div>
