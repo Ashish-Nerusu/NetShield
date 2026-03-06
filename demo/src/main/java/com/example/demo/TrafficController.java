@@ -62,24 +62,35 @@ public class TrafficController {
     private <T> ResponseEntity<T> postWithRetry(String url, HttpEntity<?> req, Class<T> type) throws InterruptedException {
         int attempts = 0;
         Exception last = null;
-        while (attempts < 3) {
+        while (attempts < 4) {
             attempts++;
             try {
                 return client().postForEntity(url, req, type);
-            } catch (org.springframework.web.client.HttpServerErrorException e) {
+            } catch (org.springframework.web.client.RestClientResponseException e) {
                 last = e;
-                if (e.getStatusCode() == HttpStatus.BAD_GATEWAY || e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
-                    Thread.sleep(attempts * 2000L);
+                int code = e.getRawStatusCode();
+                if (code == HttpStatus.BAD_GATEWAY.value() || code == HttpStatus.SERVICE_UNAVAILABLE.value() || code == HttpStatus.TOO_MANY_REQUESTS.value()) {
+                    String ra = e.getResponseHeaders() != null ? e.getResponseHeaders().getFirst("Retry-After") : null;
+                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : attempts * 2500L;
+                    Thread.sleep(waitMs);
                     continue;
                 }
                 throw e;
             } catch (org.springframework.web.client.ResourceAccessException e) {
                 last = e;
-                Thread.sleep(attempts * 2000L);
+                Thread.sleep(attempts * 2500L);
             }
         }
         if (last instanceof RuntimeException) throw (RuntimeException) last;
         throw new RuntimeException(last != null ? last.getMessage() : "Upstream error");
+    }
+
+    private long parseRetryAfterMillis(String ra) {
+        try {
+            return Long.parseLong(ra.trim()) * 1000L;
+        } catch (Exception ignored) {
+            return 2000L;
+        }
     }
 
     // ================= HISTORY =================
