@@ -47,10 +47,12 @@ function UploadPage() {
         localStorage.setItem('netshield_attacks', JSON.stringify(next));
       } catch {}
     } catch (error) {
-      const serverMsg =
-        (error.response && (error.response.data?.detail || error.response.data)) ||
-        error.message;
-      alert(`Upload failed: ${serverMsg}`);
+      const status = error.response?.status;
+      const statusText = error.response?.statusText;
+      const url = error.config?.url || `${API_BASE}/api/netshield/analyze-file`;
+      const body = error.response?.data;
+      const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
+      alert(`Upload failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || error.message}`);
     } finally {
       setLoading(false);
     }

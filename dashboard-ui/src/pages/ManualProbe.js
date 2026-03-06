@@ -30,8 +30,12 @@ function ManualProbe() {
       const res = await axios.post(`${API_BASE}/api/netshield/analyze-manual`, payload);
       setResult(res.data);
     } catch (err) {
-      const msg = (err.response && (err.response.data?.detail || err.response.data)) || err.message;
-      alert(`Manual analyze failed: ${msg}`);
+      const status = err.response?.status;
+      const statusText = err.response?.statusText;
+      const url = err.config?.url || `${API_BASE}/api/netshield/analyze-manual`;
+      const body = err.response?.data;
+      const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
+      alert(`Manual analyze failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);
     }
   };
   const runExplain = async () => {
@@ -50,8 +54,12 @@ function ManualProbe() {
       data.sort((a,b) => b.value - a.value);
       setExplain(data.slice(0, 10));
     } catch (err) {
-      const msg = (err.response && (err.response.data?.detail || err.response.data)) || err.message;
-      alert(`Explain failed: ${msg}`);
+      const status = err.response?.status;
+      const statusText = err.response?.statusText;
+      const url = err.config?.url || `${API_BASE}/api/netshield/explain-manual`;
+      const body = err.response?.data;
+      const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
+      alert(`Explain failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);
     }
   };
 

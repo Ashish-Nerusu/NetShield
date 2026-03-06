@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { API_BASE } from '../shared/api';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 function Gauge({ value }) {
   const pct = Math.max(0, Math.min(100, Math.round(value)));
@@ -21,6 +23,8 @@ function Profile() {
   const [user, setUser] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const run = async () => {
@@ -28,7 +32,13 @@ function Profile() {
       try {
         const me = await axios.get(`${API_BASE}/api/auth/me`);
         setUser(me.data);
-      } catch {}
+      } catch (err) {
+        const status = err.response?.status;
+        const statusText = err.response?.statusText;
+        const body = err.response?.data;
+        const bodyText = typeof body === 'string' ? body.slice(0, 500) : JSON.stringify(body);
+        alert(`Profile load failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\n${bodyText || err.message}`);
+      }
       try {
         const hist = await axios.get(`${API_BASE}/api/netshield/history`);
         setRows(hist.data || []);
@@ -78,6 +88,7 @@ function Profile() {
             <div className="kpi-title">Total Scans</div>
             <div className="kpi-value">{total}</div>
           </div>
+          <button onClick={() => { logout(); navigate('/login'); }} style={{ marginLeft: 'auto' }}>Logout</button>
         </div>
         <div className="glass-card stats-card">
           <div className="kpi">
