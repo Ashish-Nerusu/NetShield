@@ -15,8 +15,6 @@ import java.util.List;
 
 @Configuration
 public class SecurityConfig {
-    @Value("${app.cors.allowed-origins}")
-    private String allowedOrigins;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -24,10 +22,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/netshield/health").permitAll()
+                .requestMatchers("/", "/api/auth/**", "/api/netshield/**").permitAll()
                 .anyRequest().permitAll()
             )
             .httpBasic(Customizer.withDefaults());
+        
         return http.build();
     }
 
@@ -37,23 +36,25 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        java.util.List<String> patterns = new java.util.ArrayList<>();
-        for (String s : allowedOrigins.split(",")) {
-            String t = s.trim();
-            if (!t.isEmpty()) patterns.add(t);
-        }
-        patterns.add("http://localhost:*");
-        patterns.add("http://127.0.0.1:*");
-        patterns.add("https://localhost:*");
-        patterns.add("https://127.0.0.1:*");
-        config.setAllowedOriginPatterns(patterns);
-        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS", "PUT", "DELETE"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+    public org.springframework.web.filter.CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        
+        // Use a list of explicit origins for credentials support
+        config.setAllowedOrigins(List.of(
+            "https://net-shield-gules.vercel.app",
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3000"
+        ));
+        
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        config.setAllowCredentials(true);
+        config.addExposedHeader("Authorization");
+        config.setMaxAge(3600L);
+        
         source.registerCorsConfiguration("/**", config);
-        return source;
+        return new org.springframework.web.filter.CorsFilter(source);
     }
 }

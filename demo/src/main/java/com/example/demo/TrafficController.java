@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @RestController
-@RequestMapping("/api/netshield")
+@RequestMapping("/")
 public class TrafficController {
 
     @Autowired
@@ -39,11 +39,37 @@ public class TrafficController {
                     .orElse(Optional.ofNullable(System.getenv("FASTAPI_BASE_URL"))
                             .orElse("http://localhost:8003"));
 
-    // ================= HEALTH =================
+    // ================= HEALTH & ROOT =================
 
-    @GetMapping("/health")
+    @GetMapping("/")
+    public ResponseEntity<?> root() {
+        return ResponseEntity.ok(Map.of(
+            "status", "live",
+            "service", "NetShield Gatekeeper",
+            "timestamp", LocalDateTime.now().toString()
+        ));
+    }
+
+    @GetMapping("/api/netshield/health")
     public ResponseEntity<?> health() {
         return ResponseEntity.ok(Map.of("status", "up", "bridge", "Gatekeeper"));
+    }
+
+    @GetMapping("/api/netshield/ping")
+    public ResponseEntity<?> ping() {
+        return ResponseEntity.ok(Map.of("ping", "pong", "origin", "Gatekeeper"));
+    }
+
+    @GetMapping("/api/netshield/test-ai")
+    public ResponseEntity<?> testAi() {
+        try {
+            return ResponseEntity.ok(Map.of(
+                "ai_target", aiBase,
+                "reachable", client().getForObject(aiBase + "/", Map.class) != null
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(502).body(Map.of("ai_target", aiBase, "error", e.getMessage()));
+        }
     }
 
     private RestTemplate client() {
@@ -89,7 +115,7 @@ public class TrafficController {
 
     // ================= HISTORY =================
 
-    @GetMapping("/history")
+    @GetMapping("/api/netshield/history")
     public ResponseEntity<?> history(
             @RequestHeader(value = "Authorization", required = false) String auth) {
 
@@ -105,7 +131,7 @@ public class TrafficController {
 
     // ================= GEO =================
 
-    @GetMapping("/geo")
+    @GetMapping("/api/netshield/geo")
     public ResponseEntity<?> geo(@RequestParam String ip) {
 
         String[] cities = {"London", "New York", "Tokyo", "Singapore", "Frankfurt", "Sydney", "Bengaluru"};
@@ -132,7 +158,7 @@ public class TrafficController {
 
     // ================= FILE ANALYSIS =================
 
-    @PostMapping("/analyze-file")
+    @PostMapping("/api/netshield/analyze-file")
     public ResponseEntity<?> analyzeFile(
             @RequestParam("file") MultipartFile file,
             @RequestHeader(value = "Authorization", required = false) String auth) {
@@ -196,7 +222,7 @@ public class TrafficController {
     // ================= AUTH =================
     // ================= MANUAL ANALYSIS =================
 
-    @PostMapping("/analyze-manual")
+    @PostMapping("/api/netshield/analyze-manual")
     public ResponseEntity<?> analyzeManual(@RequestBody Map<String, Object> payload) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -209,7 +235,7 @@ public class TrafficController {
         }
     }
 
-    @PostMapping("/explain-manual")
+    @PostMapping("/api/netshield/explain-manual")
     public ResponseEntity<?> explainManual(@RequestBody Map<String, Object> payload) {
         try {
             HttpHeaders headers = new HttpHeaders();
