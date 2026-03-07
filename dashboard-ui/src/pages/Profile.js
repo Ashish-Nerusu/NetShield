@@ -83,20 +83,20 @@ function Profile() {
           )}
         </div>
 
-        <div className="glass-card stats-card">
+        <div className="glass-card stats-card" style={{ gridColumn: 'span 3' }}>
           <div className="kpi">
             <div className="kpi-title">Total Scans</div>
             <div className="kpi-value">{total}</div>
           </div>
-          <button onClick={() => { logout(); navigate('/login'); }} style={{ marginLeft: 'auto' }}>Logout</button>
+          <button className="logout-btn" onClick={() => { logout(); navigate('/login'); }}>Logout</button>
         </div>
-        <div className="glass-card stats-card">
+        <div className="glass-card stats-card" style={{ gridColumn: 'span 3' }}>
           <div className="kpi">
             <div className="kpi-title">Attacks Detected</div>
             <div className="kpi-value kpi-alert">{attacks}</div>
           </div>
         </div>
-        <div className="glass-card stats-card">
+        <div className="glass-card stats-card" style={{ gridColumn: 'span 4' }}>
           <div className="kpi">
             <div className="kpi-title">Safe Events</div>
             <div className="kpi-value kpi-safe">{safe}</div>

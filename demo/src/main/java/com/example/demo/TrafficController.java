@@ -18,12 +18,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@CrossOrigin(
-        origins = "https://net-shield-gules.vercel.app",
-        allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
-        allowCredentials = "true"
-)
 @RestController
 @RequestMapping("/api/netshield")
 public class TrafficController {
@@ -54,15 +48,15 @@ public class TrafficController {
 
     private RestTemplate client() {
         var f = new org.springframework.http.client.SimpleClientHttpRequestFactory();
-        f.setConnectTimeout(30000);
-        f.setReadTimeout(90000);
+        f.setConnectTimeout(45000);
+        f.setReadTimeout(120000);
         return new RestTemplate(f);
     }
 
     private <T> ResponseEntity<T> postWithRetry(String url, HttpEntity<?> req, Class<T> type) throws InterruptedException {
         int attempts = 0;
         Exception last = null;
-        while (attempts < 4) {
+        while (attempts < 6) {
             attempts++;
             try {
                 return client().postForEntity(url, req, type);
@@ -71,14 +65,14 @@ public class TrafficController {
                 int code = e.getRawStatusCode();
                 if (code == HttpStatus.BAD_GATEWAY.value() || code == HttpStatus.SERVICE_UNAVAILABLE.value() || code == HttpStatus.TOO_MANY_REQUESTS.value()) {
                     String ra = e.getResponseHeaders() != null ? e.getResponseHeaders().getFirst("Retry-After") : null;
-                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : attempts * 2500L;
+                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : attempts * 3000L;
                     Thread.sleep(waitMs);
                     continue;
                 }
                 throw e;
             } catch (org.springframework.web.client.ResourceAccessException e) {
                 last = e;
-                Thread.sleep(attempts * 2500L);
+                Thread.sleep(attempts * 3000L);
             }
         }
         if (last instanceof RuntimeException) throw (RuntimeException) last;
@@ -228,74 +222,4 @@ public class TrafficController {
         }
     }
 
-
-    @PostMapping("/auth/signup")
-    public ResponseEntity<?> signup(@RequestBody Map<String, String> payload) {
-
-
-        String username = payload.getOrDefault("username", "").trim();
-        String email = payload.getOrDefault("email", "").trim();
-        String password = payload.getOrDefault("password", "");
-
-        if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            return ResponseEntity.badRequest().body("All fields are required.");
-        }
-
-        if (usersRepo.findByUsername(username).isPresent()) {
-            return ResponseEntity.badRequest().body("Username already exists.");
-        }
-
-        if (usersRepo.findByEmail(email).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already exists.");
-        }
-
-        User u = new User();
-        u.setUsername(username);
-        u.setEmail(email);
-        u.setPasswordHash(encoder.encode(password));
-
-        usersRepo.save(u);
-
-        String token = jwtUtil.generateToken(u.getId(), u.getUsername());
-
-        return ResponseEntity.ok(Map.of(
-                "token", token,
-                "user", Map.of(
-                        "id", u.getId(),
-                        "username", u.getUsername(),
-                        "email", u.getEmail()
-                )
-        ));
-    }
-
-    @PostMapping("/auth/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
-
-        String login = payload.getOrDefault("username", "").trim();
-        String password = payload.getOrDefault("password", "");
-
-        Optional<User> maybe = usersRepo.findByUsername(login);
-        if (maybe.isEmpty()) maybe = usersRepo.findByEmail(login);
-
-        if (maybe.isEmpty()) {
-            return ResponseEntity.status(401).body("Invalid credentials.");
-        }
-
-        User u = maybe.get();
-
-        if (!encoder.matches(password, u.getPasswordHash())) {
-            return ResponseEntity.status(401).body("Invalid credentials.");
-        }
-
-        String token = jwtUtil.generateToken(u.getId(), u.getUsername());
-
-        return ResponseEntity.ok(Map.of(
-                "token", token,
-                "user", Map.of(
-                        "id", u.getId(),
-                        "username", u.getUsername(),
-                        "email", u.getEmail()
-                )
-        ));
-    }
 }

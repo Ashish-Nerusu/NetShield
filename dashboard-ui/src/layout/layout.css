@@ -43,6 +43,8 @@
 .kpi-value { font-size: 24px; font-weight: 700; }
 .kpi-alert { color: #f85149; }
 .kpi-safe { color: #3fb950; }
+.logout-btn { background: #f85149 !important; color: white !important; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; margin-top: 0 !important; cursor: pointer; transition: opacity .2s; }
+.logout-btn:hover { opacity: 0.8; }
 .kpi-sub { margin-left: 16px; }
 .threat-tables { grid-column: span 12; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .table-wrap { overflow: auto; }
