@@ -91,14 +91,18 @@ public class TrafficController {
                 int code = e.getRawStatusCode();
                 if (code == HttpStatus.BAD_GATEWAY.value() || code == HttpStatus.SERVICE_UNAVAILABLE.value() || code == HttpStatus.TOO_MANY_REQUESTS.value()) {
                     String ra = e.getResponseHeaders() != null ? e.getResponseHeaders().getFirst("Retry-After") : null;
-                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : attempts * 3000L;
+                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : attempts * 4000L;
+                    // Add some jitter for 429s
+                    if (code == HttpStatus.TOO_MANY_REQUESTS.value()) {
+                        waitMs += (long) (Math.random() * 2000L);
+                    }
                     Thread.sleep(waitMs);
                     continue;
                 }
                 throw e;
             } catch (org.springframework.web.client.ResourceAccessException e) {
                 last = e;
-                Thread.sleep(attempts * 3000L);
+                Thread.sleep(attempts * 4000L);
             }
         }
         if (last instanceof RuntimeException) throw (RuntimeException) last;
@@ -214,6 +218,10 @@ public class TrafficController {
             return response;
 
         } catch (Exception e) {
+            String msg = e.getMessage();
+            if (msg != null && (msg.contains("429") || msg.contains("DOCTYPE html"))) {
+                return ResponseEntity.status(429).body("NetShield is currently under heavy load or platform rate-limiting. Please wait 30-60 seconds and try again.");
+            }
             return ResponseEntity.status(500)
                     .body("Gatekeeper Error: " + e.getMessage());
         }
@@ -231,6 +239,10 @@ public class TrafficController {
             ResponseEntity<Map> response = postWithRetry(aiBase + "/analyze-manual", req, Map.class);
             return response;
         } catch (Exception e) {
+            String msg = e.getMessage();
+            if (msg != null && (msg.contains("429") || msg.contains("DOCTYPE html"))) {
+                return ResponseEntity.status(429).body(Map.of("detail", "NetShield is currently under heavy load or platform rate-limiting. Please wait 30-60 seconds and try again."));
+            }
             return ResponseEntity.status(500).body(Map.of("detail", "Gatekeeper Error: " + e.getMessage()));
         }
     }
@@ -244,6 +256,10 @@ public class TrafficController {
             ResponseEntity<Map> response = postWithRetry(aiBase + "/explain-manual", req, Map.class);
             return response;
         } catch (Exception e) {
+            String msg = e.getMessage();
+            if (msg != null && (msg.contains("429") || msg.contains("DOCTYPE html"))) {
+                return ResponseEntity.status(429).body(Map.of("detail", "NetShield is currently under heavy load or platform rate-limiting. Please wait 30-60 seconds and try again."));
+            }
             return ResponseEntity.status(500).body(Map.of("detail", "Gatekeeper Error: " + e.getMessage()));
         }
     }
