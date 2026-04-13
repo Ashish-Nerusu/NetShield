@@ -27,17 +27,22 @@ function UploadPage() {
   const handleUpload = async () => {
     if (!file) return alert("Please select a CSV file first!");
     setLoading(true);
+
     const formData = new FormData();
     formData.append('file', file);
+
     try {
       const response = await api.post(analyzeUrl, formData, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
+
       setResult(response.data);
       if (response.data.detected_dataset) setDetected(response.data.detected_dataset);
+
       try {
         let srcLoc = response.data.src_location;
         let dstLoc = response.data.dst_location;
+
         if (!srcLoc && response.data.src_ip) {
           const geo = await api.get(geoUrl, { params: { ip: response.data.src_ip } });
           srcLoc = { lat: geo.data.lat, lng: geo.data.lng };
@@ -46,8 +51,10 @@ function UploadPage() {
           const geo = await api.get(geoUrl, { params: { ip: response.data.dst_ip } });
           dstLoc = { lat: geo.data.lat, lng: geo.data.lng };
         }
+
         srcLoc = srcLoc || { lat: 12.9716, lng: 77.5946 };
         dstLoc = dstLoc || { lat: 12.9716, lng: 77.5946 };
+
         const newAttack = {
           id: Date.now(),
           srcLat: srcLoc.lat,
@@ -57,6 +64,7 @@ function UploadPage() {
           type: response.data.prediction,
           createdAt: Date.now()
         };
+
         const prev = JSON.parse(localStorage.getItem('netshield_attacks') || '[]');
         const next = [newAttack, ...prev].slice(0, 10);
         localStorage.setItem('netshield_attacks', JSON.stringify(next));
