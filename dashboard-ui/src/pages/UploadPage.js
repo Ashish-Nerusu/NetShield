@@ -25,7 +25,7 @@ function UploadPage() {
   }, [apiOrigin]);
 
   const handleUpload = async () => {
-    if (!file) return alert("Please select a CSV file first!");
+    if (!file || loading) return alert("Please select a CSV file first!");
     setLoading(true);
 
     const formData = new FormData();
@@ -33,7 +33,8 @@ function UploadPage() {
 
     try {
       const response = await api.post(analyzeUrl, formData, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        timeout: 60000 // Increase timeout to 60 seconds
       });
 
       setResult(response.data);
@@ -92,7 +93,7 @@ function UploadPage() {
       {detected && <p>Detected dataset: {detected}</p>}
       {result && (
         <section className={`result-card ${result.prediction === 'Attack' ? 'alert' : 'safe'}`}>
-          <h3>Result: {result.prediction}</h3>
+          <h3>Result: {result.prediction === 'Attack' ? 'DDoS Detected' : 'Traffic Normal'}</h3>
           <div className="stats">
             <p>Threat Score: {Number(((result.confidence_score ?? result.threat_score ?? 0) * 100).toFixed(2))}%</p>
             <p>Severity: {result.severity || (result.prediction === 'Attack' ? 'High' : 'None')}</p>

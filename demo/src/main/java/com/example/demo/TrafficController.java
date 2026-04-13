@@ -83,7 +83,7 @@ public class TrafficController {
     private <T> ResponseEntity<T> postWithRetry(String url, HttpEntity<?> req, Class<T> type) throws InterruptedException {
         int attempts = 0;
         Exception last = null;
-        while (attempts < 8) {
+        while (attempts < 5) { // Reduced attempts to stay within frontend timeout
             attempts++;
             try {
                 return client().postForEntity(url, req, type);
@@ -93,20 +93,20 @@ public class TrafficController {
                 // 502/503 (Cold start) or 429 (Rate limit)
                 if (code == HttpStatus.BAD_GATEWAY.value() || code == HttpStatus.SERVICE_UNAVAILABLE.value() || code == HttpStatus.TOO_MANY_REQUESTS.value()) {
                     String ra = e.getResponseHeaders() != null ? e.getResponseHeaders().getFirst("Retry-After") : null;
-                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : (long) Math.pow(2, attempts) * 1000L;
+                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : (long) attempts * 2000L; // Linear wait
                     // Add some jitter
-                    waitMs += (long) (Math.random() * 2000L);
+                    waitMs += (long) (Math.random() * 1000L);
                     Thread.sleep(waitMs);
                     continue;
                 }
                 throw e;
             } catch (org.springframework.web.client.ResourceAccessException e) {
                 last = e;
-                Thread.sleep((long) Math.pow(2, attempts) * 1000L);
+                Thread.sleep((long) attempts * 2000L);
             }
         }
         if (last instanceof RuntimeException) throw (RuntimeException) last;
-        throw new RuntimeException(last != null ? last.getMessage() : "Upstream error after 8 retries");
+        throw new RuntimeException(last != null ? last.getMessage() : "Upstream error after retries");
     }
 
     private long parseRetryAfterMillis(String ra) {
@@ -174,15 +174,7 @@ public class TrafficController {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-
-            ByteArrayResource res = new ByteArrayResource(file.getBytes()) {
-                @Override
-                public String getFilename() {
-                    return file.getOriginalFilename();
-                }
-            };
-
-            body.add("file", res);
+            body.add("file", file.getResource());
 
             HttpEntity<MultiValueMap<String, Object>> req =
                     new HttpEntity<>(body, headers);
