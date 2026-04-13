@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/")
+@CrossOrigin(origins = "https://net-shield-gules.vercel.app", allowCredentials = "true", allowedHeaders = "*")
 public class TrafficController {
 
     @Autowired
