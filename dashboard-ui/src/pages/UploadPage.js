@@ -6,6 +6,7 @@ function UploadPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [detected, setDetected] = useState(null);
+  const [retryTimer, setRetryTimer] = useState(0);
   const { token } = useAuth();
 
   const apiOrigin = useMemo(() => {
@@ -25,7 +26,7 @@ function UploadPage() {
   }, [apiOrigin]);
 
   const handleUpload = async () => {
-    if (!file || loading) return alert("Please select a CSV file first!");
+    if (!file || loading || retryTimer > 0) return;
     setLoading(true);
 
     const formData = new FormData();
@@ -34,7 +35,7 @@ function UploadPage() {
     try {
       const response = await api.post(analyzeUrl, formData, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        timeout: 60000 // Increase timeout to 60 seconds
+        timeout: 120000 // Increase timeout to 120 seconds (2 minutes)
       });
 
       setResult(response.data);
@@ -72,6 +73,18 @@ function UploadPage() {
       } catch {}
     } catch (error) {
       const status = error.response?.status;
+      if (status === 429) {
+        setRetryTimer(60);
+        const interval = setInterval(() => {
+          setRetryTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
       const statusText = error.response?.statusText;
       const url = error.config?.url || analyzeUrl;
       const body = error.response?.data;
@@ -87,8 +100,8 @@ function UploadPage() {
       <h2>Automated Shield</h2>
       <p>Upload a CSV file. Dataset is auto-detected.</p>
       <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={handleUpload} disabled={loading}>
-        {loading ? "Analyzing..." : "Run Detection"}
+      <button onClick={handleUpload} disabled={loading || retryTimer > 0}>
+        {loading ? "Analyzing..." : retryTimer > 0 ? `Retry in ${retryTimer}s` : "Run Detection"}
       </button>
       {detected && <p>Detected dataset: {detected}</p>}
       {result && (
