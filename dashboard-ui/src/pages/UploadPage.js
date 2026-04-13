@@ -1,12 +1,28 @@
-import React, { useState } from 'react';
-import { api } from '../context/AuthContext';
-import { API_BASE } from '../shared/api';
+import React, { useMemo, useState } from 'react';
+import { api, useAuth } from '../context/AuthContext';
 
 function UploadPage() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [detected, setDetected] = useState(null);
+  const { token } = useAuth();
+
+  const apiOrigin = useMemo(() => {
+    const raw =
+      process.env.REACT_APP_API_BASE ||
+      process.env.REACT_APP_API_URL ||
+      (process.env.NODE_ENV === 'production' ? 'https://netshield-gatekeeper.onrender.com' : '');
+    return raw.replace(/\/+$/, '').replace(/\.+$/, '');
+  }, []);
+
+  const analyzeUrl = useMemo(() => {
+    return apiOrigin ? `${apiOrigin}/api/netshield/analyze-file` : `/api/netshield/analyze-file`;
+  }, [apiOrigin]);
+
+  const geoUrl = useMemo(() => {
+    return apiOrigin ? `${apiOrigin}/api/netshield/geo` : `/api/netshield/geo`;
+  }, [apiOrigin]);
 
   const handleUpload = async () => {
     if (!file) return alert("Please select a CSV file first!");
@@ -14,21 +30,20 @@ function UploadPage() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await api.post(
-        `/api/netshield/analyze-file`,
-        formData
-      );
+      const response = await api.post(analyzeUrl, formData, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
       setResult(response.data);
       if (response.data.detected_dataset) setDetected(response.data.detected_dataset);
       try {
         let srcLoc = response.data.src_location;
         let dstLoc = response.data.dst_location;
         if (!srcLoc && response.data.src_ip) {
-          const geo = await api.get(`/api/netshield/geo`, { params: { ip: response.data.src_ip } });
+          const geo = await api.get(geoUrl, { params: { ip: response.data.src_ip } });
           srcLoc = { lat: geo.data.lat, lng: geo.data.lng };
         }
         if (!dstLoc && response.data.dst_ip) {
-          const geo = await api.get(`/api/netshield/geo`, { params: { ip: response.data.dst_ip } });
+          const geo = await api.get(geoUrl, { params: { ip: response.data.dst_ip } });
           dstLoc = { lat: geo.data.lat, lng: geo.data.lng };
         }
         srcLoc = srcLoc || { lat: 12.9716, lng: 77.5946 };
@@ -49,7 +64,7 @@ function UploadPage() {
     } catch (error) {
       const status = error.response?.status;
       const statusText = error.response?.statusText;
-      const url = error.config?.url || (API_BASE + `/api/netshield/analyze-file`);
+      const url = error.config?.url || analyzeUrl;
       const body = error.response?.data;
       const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
       alert(`Upload failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || error.message}`);
