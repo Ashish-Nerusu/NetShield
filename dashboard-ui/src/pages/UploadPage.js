@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../context/AuthContext';
+import { API_BASE } from '../shared/api';
 
 function UploadPage() {
   const [file, setFile] = useState(null);
@@ -48,7 +49,7 @@ function UploadPage() {
     } catch (error) {
       const status = error.response?.status;
       const statusText = error.response?.statusText;
-      const url = error.config?.url || `${API_BASE}/api/netshield/analyze-file`;
+      const url = error.config?.url || (API_BASE + `/api/netshield/analyze-file`);
       const body = error.response?.data;
       const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
       alert(`Upload failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || error.message}`);

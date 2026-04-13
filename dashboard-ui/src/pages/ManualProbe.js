@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../context/AuthContext';
+import { API_BASE } from '../shared/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 function ManualProbe() {
@@ -31,7 +32,7 @@ function ManualProbe() {
     } catch (err) {
       const status = err.response?.status;
       const statusText = err.response?.statusText;
-      const url = err.config?.url || `/api/netshield/analyze-manual`;
+      const url = err.config?.url || (API_BASE + `/api/netshield/analyze-manual`);
       const body = err.response?.data;
       const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
       alert(`Manual analyze failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);
@@ -55,7 +56,7 @@ function ManualProbe() {
     } catch (err) {
       const status = err.response?.status;
       const statusText = err.response?.statusText;
-      const url = err.config?.url || `/api/netshield/explain-manual`;
+      const url = err.config?.url || (API_BASE + `/api/netshield/explain-manual`);
       const body = err.response?.data;
       const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
       alert(`Explain failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);
