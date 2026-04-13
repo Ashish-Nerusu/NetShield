@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../shared/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, api } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 function Gauge({ value }) {
@@ -30,7 +28,7 @@ function Profile() {
     const run = async () => {
       setLoading(true);
       try {
-        const me = await axios.get(`${API_BASE}/api/auth/me`);
+        const me = await api.get(`/api/auth/me`);
         setUser(me.data);
       } catch (err) {
         const status = err.response?.status;
@@ -40,7 +38,7 @@ function Profile() {
         alert(`Profile load failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\n${bodyText || err.message}`);
       }
       try {
-        const hist = await axios.get(`${API_BASE}/api/netshield/history`);
+        const hist = await api.get(`/api/netshield/history`);
         setRows(hist.data || []);
       } catch {}
       setLoading(false);

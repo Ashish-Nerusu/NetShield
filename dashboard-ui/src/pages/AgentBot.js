@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../shared/api';
+import { api } from '../context/AuthContext';
 
 function AgentBot() {
   const [messages, setMessages] = useState([{ role: 'assistant', text: 'Ask me about any IP or incident.' }]);
@@ -14,7 +13,7 @@ function AgentBot() {
     setInput('');
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/api/netshield/agent`, { prompt: userMsg.text });
+      const res = await api.post(`/api/netshield/agent`, { prompt: userMsg.text });
       const ai = res.data || {};
       const text = `${ai.summary}\nRisk: ${ai.riskLevel}\nNext: ${ai.nextSteps}`;
       setMessages((m) => [...m, { role: 'assistant', text }]);

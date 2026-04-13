@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../shared/api';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, api } from '../context/AuthContext';
 
 function Signup() {
   const [username, setUsername] = useState('');
@@ -15,7 +13,7 @@ function Signup() {
   const submit = async () => {
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/api/auth/signup`, { username, email, password });
+      const res = await api.post(`/api/auth/signup`, { username, email, password });
       setAuth(res.data.token, res.data.user);
       navigate('/dashboard', { replace: true });
     } catch (e) {

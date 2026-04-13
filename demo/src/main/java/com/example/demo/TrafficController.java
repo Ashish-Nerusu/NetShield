@@ -82,31 +82,30 @@ public class TrafficController {
     private <T> ResponseEntity<T> postWithRetry(String url, HttpEntity<?> req, Class<T> type) throws InterruptedException {
         int attempts = 0;
         Exception last = null;
-        while (attempts < 6) {
+        while (attempts < 8) {
             attempts++;
             try {
                 return client().postForEntity(url, req, type);
             } catch (org.springframework.web.client.RestClientResponseException e) {
                 last = e;
                 int code = e.getRawStatusCode();
+                // 502/503 (Cold start) or 429 (Rate limit)
                 if (code == HttpStatus.BAD_GATEWAY.value() || code == HttpStatus.SERVICE_UNAVAILABLE.value() || code == HttpStatus.TOO_MANY_REQUESTS.value()) {
                     String ra = e.getResponseHeaders() != null ? e.getResponseHeaders().getFirst("Retry-After") : null;
-                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : attempts * 4000L;
-                    // Add some jitter for 429s
-                    if (code == HttpStatus.TOO_MANY_REQUESTS.value()) {
-                        waitMs += (long) (Math.random() * 2000L);
-                    }
+                    long waitMs = (ra != null) ? parseRetryAfterMillis(ra) : (long) Math.pow(2, attempts) * 1000L;
+                    // Add some jitter
+                    waitMs += (long) (Math.random() * 2000L);
                     Thread.sleep(waitMs);
                     continue;
                 }
                 throw e;
             } catch (org.springframework.web.client.ResourceAccessException e) {
                 last = e;
-                Thread.sleep(attempts * 4000L);
+                Thread.sleep((long) Math.pow(2, attempts) * 1000L);
             }
         }
         if (last instanceof RuntimeException) throw (RuntimeException) last;
-        throw new RuntimeException(last != null ? last.getMessage() : "Upstream error");
+        throw new RuntimeException(last != null ? last.getMessage() : "Upstream error after 8 retries");
     }
 
     private long parseRetryAfterMillis(String ra) {
@@ -130,7 +129,8 @@ public class TrafficController {
                 return ResponseEntity.ok(historyRepo.findByUserId(uid));
             } catch (Exception ignored) {}
         }
-        return ResponseEntity.ok(historyRepo.findAll());
+        // If not logged in, return empty list instead of all data
+        return ResponseEntity.ok(new ArrayList<>());
     }
 
     // ================= GEO =================
@@ -208,7 +208,8 @@ public class TrafficController {
                     try {
                         Claims c = jwtUtil.parse(auth.substring(7));
                         Long uid = c.get("uid", Long.class);
-                        h.setUserId(uid);
+                        User u = usersRepo.findById(uid).orElse(null);
+                        h.setUser(u);
                     } catch (Exception ignored) {}
                 }
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../shared/api';
+import { api } from '../context/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 function ManualProbe() {
@@ -27,12 +26,12 @@ function ManualProbe() {
       prio: Number(form.prio || 0)
     };
     try {
-      const res = await axios.post(`${API_BASE}/api/netshield/analyze-manual`, payload);
+      const res = await api.post(`/api/netshield/analyze-manual`, payload);
       setResult(res.data);
     } catch (err) {
       const status = err.response?.status;
       const statusText = err.response?.statusText;
-      const url = err.config?.url || `${API_BASE}/api/netshield/analyze-manual`;
+      const url = err.config?.url || `/api/netshield/analyze-manual`;
       const body = err.response?.data;
       const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
       alert(`Manual analyze failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);
@@ -48,7 +47,7 @@ function ManualProbe() {
       prio: Number(form.prio || 0)
     };
     try {
-      const res = await axios.post(`${API_BASE}/api/netshield/explain-manual`, payload);
+      const res = await api.post(`/api/netshield/explain-manual`, payload);
       const imp = res.data.importances || {};
       const data = Object.keys(imp).map((k) => ({ name: k, value: Math.round(imp[k] * 100) }));
       data.sort((a,b) => b.value - a.value);
@@ -56,7 +55,7 @@ function ManualProbe() {
     } catch (err) {
       const status = err.response?.status;
       const statusText = err.response?.statusText;
-      const url = err.config?.url || `${API_BASE}/api/netshield/explain-manual`;
+      const url = err.config?.url || `/api/netshield/explain-manual`;
       const body = err.response?.data;
       const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
       alert(`Explain failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);

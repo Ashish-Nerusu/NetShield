@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../shared/api';
+import { api } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
@@ -14,7 +13,7 @@ function HistoryPage() {
     const run = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${API_BASE}/api/netshield/history`);
+        const res = await api.get(`/api/netshield/history`);
         const data = res.data || [];
         setRows(data);
         const last = data.slice(-5).reverse();

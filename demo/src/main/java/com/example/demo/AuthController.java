@@ -56,12 +56,19 @@ public class AuthController {
     public ResponseEntity<?> me(@RequestHeader(value="Authorization", required=false) String auth) {
         if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).body("Missing token.");
         String token = auth.substring(7);
-        Claims c = jwt.parse(token);
-        Long uid = c.get("uid", Long.class);
-        Optional<User> maybe = users.findById(uid);
-        if (maybe.isEmpty()) return ResponseEntity.status(401).body("Invalid token.");
-        User u = maybe.get();
-        return ResponseEntity.ok(Map.of("id", u.getId(), "username", u.getUsername(), "email", u.getEmail()));
+        try {
+            Claims c = jwt.parse(token);
+            Long uid = c.get("uid", Long.class);
+            if (uid == null) return ResponseEntity.status(401).body("Invalid token payload.");
+            
+            Optional<User> maybe = users.findById(uid);
+            if (maybe.isEmpty()) return ResponseEntity.status(401).body("User no longer exists.");
+            
+            User u = maybe.get();
+            return ResponseEntity.ok(Map.of("id", u.getId(), "username", u.getUsername(), "email", u.getEmail()));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Token expired or invalid: " + e.getMessage());
+        }
     }
 
     @GetMapping("/ping")

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../shared/api';
+import { api } from '../context/AuthContext';
 
 function UploadPage() {
   const [file, setFile] = useState(null);
@@ -14,8 +13,8 @@ function UploadPage() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await axios.post(
-        `${API_BASE}/api/netshield/analyze-file`,
+      const response = await api.post(
+        `/api/netshield/analyze-file`,
         formData
       );
       setResult(response.data);
@@ -24,11 +23,11 @@ function UploadPage() {
         let srcLoc = response.data.src_location;
         let dstLoc = response.data.dst_location;
         if (!srcLoc && response.data.src_ip) {
-          const geo = await axios.get(`${API_BASE}/api/netshield/geo`, { params: { ip: response.data.src_ip } });
+          const geo = await api.get(`/api/netshield/geo`, { params: { ip: response.data.src_ip } });
           srcLoc = { lat: geo.data.lat, lng: geo.data.lng };
         }
         if (!dstLoc && response.data.dst_ip) {
-          const geo = await axios.get(`${API_BASE}/api/netshield/geo`, { params: { ip: response.data.dst_ip } });
+          const geo = await api.get(`/api/netshield/geo`, { params: { ip: response.data.dst_ip } });
           dstLoc = { lat: geo.data.lat, lng: geo.data.lng };
         }
         srcLoc = srcLoc || { lat: 12.9716, lng: 77.5946 };

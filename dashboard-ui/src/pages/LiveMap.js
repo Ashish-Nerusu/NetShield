@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../shared/api';
+import { api } from '../context/AuthContext';
 import { MapContainer, TileLayer, CircleMarker, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -10,14 +9,14 @@ function LiveMap() {
 const [home] = useState({ lat: 12.9716, lng: 77.5946 });
   useEffect(() => {
     const run = async () => {
-      const res = await axios.get(`${API_BASE}/api/netshield/history`);
+      const res = await api.get(`/api/netshield/history`);
       const rows = res.data || [];
       const latest = rows.slice(-10);
       const enriched = [];
       for (const r of latest) {
         if (!r.srcIp) continue;
         try {
-          const geo = await axios.get(`${API_BASE}/api/netshield/geo`, { params: { ip: r.srcIp } });
+          const geo = await api.get(`/api/netshield/geo`, { params: { ip: r.srcIp } });
           enriched.push({ ...r, geo: geo.data });
         } catch {}
       }

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API_BASE } from '../shared/api';
 
 // Create axios instance
-const api = axios.create({ baseURL: API_BASE });
+export const api = axios.create({ baseURL: API_BASE });
 
 const AuthContext = createContext(null);
 
@@ -24,8 +24,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
       delete api.defaults.headers.common['Authorization'];
+      delete axios.defaults.headers.common['Authorization'];
     }
   }, [token]);
 

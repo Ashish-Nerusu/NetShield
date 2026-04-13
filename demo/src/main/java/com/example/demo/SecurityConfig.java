@@ -40,12 +40,12 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
-        // Use a list of explicit origins for credentials support
-        config.setAllowedOrigins(List.of(
+        // Use allowedOriginPatterns to support Vercel preview/branch URLs
+        config.setAllowedOriginPatterns(List.of(
             "https://net-shield-gules.vercel.app",
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://127.0.0.1:3000"
+            "https://*.vercel.app",
+            "http://localhost:[*]",
+            "http://127.0.0.1:[*]"
         ));
         
         config.addAllowedHeader("*");
