@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface HistoryRepository extends JpaRepository<AnalysisHistory, Long> {
     java.util.List<AnalysisHistory> findByUser(User user);
-    java.util.List<AnalysisHistory> findByUserId(Long userId);
+    java.util.List<AnalysisHistory> findByUser_Id(Long userId);
     java.util.List<AnalysisHistory> findBySrcIp(String srcIp);
     java.util.List<AnalysisHistory> findByDstIp(String dstIp);
 }

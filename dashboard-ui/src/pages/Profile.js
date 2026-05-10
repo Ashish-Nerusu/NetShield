@@ -4,15 +4,33 @@ import { useNavigate } from 'react-router-dom';
 
 function Gauge({ value }) {
   const pct = Math.max(0, Math.min(100, Math.round(value)));
-  const bg = `conic-gradient(#3fb950 ${pct * 3.6}deg, #1f232b ${pct * 3.6}deg)`;
+  const bg = `conic-gradient(var(--color-success) ${pct * 3.6}deg, var(--color-bg-canvas) ${pct * 3.6}deg)`;
   return (
-    <div className="gauge">
-      <div className="gauge-ring" style={{ background: bg }}>
-        <div className="gauge-hole">
-          <div className="gauge-text">{pct}%</div>
+    <div className="flex-col items-center gap-2">
+      <div style={{ 
+        width: '100px', 
+        height: '100px', 
+        borderRadius: '50%', 
+        background: bg,
+        display: 'grid',
+        placeItems: 'center',
+        position: 'relative'
+      }}>
+        <div style={{ 
+          width: '70px', 
+          height: '70px', 
+          borderRadius: '50%', 
+          backgroundColor: 'var(--color-bg-solid)',
+          display: 'grid',
+          placeItems: 'center',
+          fontWeight: 700,
+          color: 'var(--color-text-primary)',
+          fontSize: '1.25rem'
+        }}>
+          {pct}%
         </div>
       </div>
-      <div className="gauge-label">Avg Confidence</div>
+      <div className="text-xs text-muted font-semibold uppercase tracking-wider">Avg Confidence</div>
     </div>
   );
 }
@@ -65,74 +83,101 @@ function Profile() {
 
   return (
     <div>
-      <h2>Profile</h2>
-      <div className="profile-grid">
-        <div className="glass-card identity-card">
+      <div className="flex justify-between items-center mb-6">
+        <h2 style={{ color: 'var(--color-text-primary)', margin: 0 }}>Security Profile</h2>
+        <button className="btn btn-secondary danger" onClick={() => { logout(); navigate('/login'); }}>
+          Sign Out
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 'var(--spacing-6)' }}>
+        {/* Identity Card */}
+        <div className="card" style={{ gridColumn: 'span 4', display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
           {loading ? (
-            <div className="skeleton-row"></div>
+            <div style={{ height: '40px', width: '100%', backgroundColor: 'var(--color-bg-canvas)', borderRadius: 'var(--radius-md)' }}></div>
           ) : (
-            <div className="identity">
-              <div className="avatar">🛡️</div>
-              <div className="identity-info">
-                <div className="identity-name">{user?.username || '—'}</div>
-                <div className="identity-email">{user?.email || '—'}</div>
+            <>
+              <div style={{ 
+                width: '64px', height: '64px', borderRadius: 'var(--radius-lg)', 
+                backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)',
+                display: 'grid', placeItems: 'center', fontSize: '1.5rem'
+              }}>
+                {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
               </div>
-            </div>
+              <div>
+                <div style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{user?.username || '—'}</div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{user?.email || '—'}</div>
+                <div className="badge badge-primary mt-2">Security Analyst</div>
+              </div>
+            </>
           )}
         </div>
 
-        <div className="glass-card stats-card" style={{ gridColumn: 'span 3' }}>
-          <div className="kpi">
-            <div className="kpi-title">Total Scans</div>
-            <div className="kpi-value">{total}</div>
-          </div>
-          <button className="logout-btn" onClick={() => { logout(); navigate('/login'); }}>Logout</button>
-        </div>
-        <div className="glass-card stats-card" style={{ gridColumn: 'span 3' }}>
-          <div className="kpi">
-            <div className="kpi-title">Attacks Detected</div>
-            <div className="kpi-value kpi-alert">{attacks}</div>
-          </div>
-        </div>
-        <div className="glass-card stats-card" style={{ gridColumn: 'span 4' }}>
-          <div className="kpi">
-            <div className="kpi-title">Safe Events</div>
-            <div className="kpi-value kpi-safe">{safe}</div>
-          </div>
+        {/* Stats Section */}
+        <div className="card metric-card" style={{ gridColumn: 'span 2' }}>
+          <span className="text-xs text-muted font-semibold uppercase">Total Scans</span>
+          <div className="metric-value" style={{ color: 'var(--color-primary)' }}>{total}</div>
         </div>
 
-        <div className="glass-card stats-card">
+        <div className="card metric-card" style={{ gridColumn: 'span 2' }}>
+          <span className="text-xs text-muted font-semibold uppercase">Attacks Detected</span>
+          <div className="metric-value" style={{ color: 'var(--color-danger)' }}>{attacks}</div>
+        </div>
+
+        <div className="card metric-card" style={{ gridColumn: 'span 2' }}>
+          <span className="text-xs text-muted font-semibold uppercase">Safe Events</span>
+          <div className="metric-value" style={{ color: 'var(--color-success)' }}>{safe}</div>
+        </div>
+
+        <div className="card flex items-center justify-center" style={{ gridColumn: 'span 2' }}>
           <Gauge value={Math.round(avgConfidence * 100)} />
-          <div className="kpi-sub">
-            <div className="kpi-title">Last Scan</div>
-            <div className="kpi-value">{lastTs ? lastTs.toLocaleString() : '—'}</div>
-          </div>
         </div>
 
-        <div className="glass-card threat-tables">
-          <div className="table-wrap">
-            <div className="table-title">Top Sources</div>
-            <table className="modern">
-              <thead>
-                <tr><th>IP</th><th>Count</th></tr>
-              </thead>
-              <tbody>
-                {topSrc.map(([ip, c]) => (<tr key={ip}><td><span className="ip-badge">{ip}</span></td><td>{c}</td></tr>))}
-                {topSrc.length === 0 && (<tr><td colSpan="2">No data</td></tr>)}
-              </tbody>
-            </table>
+        {/* Tables Section */}
+        <div className="card" style={{ gridColumn: 'span 6' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: 'var(--spacing-4)' }}>Top Traffic Sources</h3>
+          <table className="table">
+            <thead>
+              <tr><th>Source IP</th><th className="text-right">Incident Count</th></tr>
+            </thead>
+            <tbody>
+              {topSrc.map(([ip, c]) => (
+                <tr key={ip}>
+                  <td><code style={{ padding: '2px 6px', backgroundColor: 'var(--color-bg-canvas)', borderRadius: '4px' }}>{ip}</code></td>
+                  <td className="text-right font-semibold">{c}</td>
+                </tr>
+              ))}
+              {topSrc.length === 0 && (<tr><td colSpan="2" className="text-center text-muted">No data available</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card" style={{ gridColumn: 'span 6' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: 'var(--spacing-4)' }}>Top Targets</h3>
+          <table className="table">
+            <thead>
+              <tr><th>Destination IP</th><th className="text-right">Incident Count</th></tr>
+            </thead>
+            <tbody>
+              {topDst.map(([ip, c]) => (
+                <tr key={ip}>
+                  <td><code style={{ padding: '2px 6px', backgroundColor: 'var(--color-bg-canvas)', borderRadius: '4px' }}>{ip}</code></td>
+                  <td className="text-right font-semibold">{c}</td>
+                </tr>
+              ))}
+              {topDst.length === 0 && (<tr><td colSpan="2" className="text-center text-muted">No data available</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+
+        {/* System Activity */}
+        <div className="card" style={{ gridColumn: 'span 12' }}>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-semibold text-muted">Last System Activity</span>
+            <span className="text-sm text-primary">{lastTs ? lastTs.toLocaleString() : '—'}</span>
           </div>
-          <div className="table-wrap">
-            <div className="table-title">Top Destinations</div>
-            <table className="modern">
-              <thead>
-                <tr><th>IP</th><th>Count</th></tr>
-              </thead>
-              <tbody>
-                {topDst.map(([ip, c]) => (<tr key={ip}><td><span className="ip-badge">{ip}</span></td><td>{c}</td></tr>))}
-                {topDst.length === 0 && (<tr><td colSpan="2">No data</td></tr>)}
-              </tbody>
-            </table>
+          <div style={{ height: '4px', width: '100%', backgroundColor: 'var(--color-bg-canvas)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: '100%', backgroundColor: 'var(--color-primary)', opacity: 0.1 }}></div>
           </div>
         </div>
       </div>

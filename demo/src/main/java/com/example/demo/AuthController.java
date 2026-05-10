@@ -11,33 +11,32 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "https://net-shield-gules.vercel.app", allowCredentials = "true", allowedHeaders = "*")
 public class AuthController {
     @Autowired private UserRepository users;
     @Autowired private PasswordEncoder encoder;
     @Autowired private JwtUtil jwt;
 
-    @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody Map<String, String> payload) {
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Map<String, String> payload) {
         String username = payload.getOrDefault("username", "").trim();
         String email = payload.getOrDefault("email", "").trim();
         String password = payload.getOrDefault("password", "");
         if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            return ResponseEntity.badRequest().body("All fields are required.");
+            return ResponseEntity.badRequest().body(Map.of("detail", "All fields are required."));
         }
         if (users.findByUsername(username).isPresent()) {
-            return ResponseEntity.badRequest().body("Username already exists.");
+            return ResponseEntity.badRequest().body(Map.of("detail", "Username already exists."));
         }
         if (users.findByEmail(email).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already exists.");
+            return ResponseEntity.badRequest().body(Map.of("detail", "Email already exists."));
         }
         User u = new User();
         u.setUsername(username);
         u.setEmail(email);
-        u.setPasswordHash(encoder.encode(password));
+        u.setPassword(encoder.encode(password));
         users.save(u);
         String token = jwt.generateToken(u.getId(), u.getUsername());
-        return ResponseEntity.ok(Map.of("token", token, "user", Map.of("id", u.getId(), "username", u.getUsername(), "email", u.getEmail())));
+        return ResponseEntity.ok(Map.of("message", "User registered successfully", "token", token, "user", Map.of("id", u.getId(), "username", u.getUsername(), "email", u.getEmail())));
     }
 
     @PostMapping("/login")
@@ -46,29 +45,29 @@ public class AuthController {
         String password = payload.getOrDefault("password", "");
         Optional<User> maybe = users.findByUsername(login);
         if (maybe.isEmpty()) maybe = users.findByEmail(login);
-        if (maybe.isEmpty()) return ResponseEntity.status(401).body("Invalid credentials.");
+        if (maybe.isEmpty()) return ResponseEntity.status(401).body(Map.of("detail", "Invalid credentials."));
         User u = maybe.get();
-        if (!encoder.matches(password, u.getPasswordHash())) return ResponseEntity.status(401).body("Invalid credentials.");
+        if (!encoder.matches(password, u.getPassword())) return ResponseEntity.status(401).body(Map.of("detail", "Invalid credentials."));
         String token = jwt.generateToken(u.getId(), u.getUsername());
-        return ResponseEntity.ok(Map.of("token", token, "user", Map.of("id", u.getId(), "username", u.getUsername(), "email", u.getEmail())));
+        return ResponseEntity.ok(Map.of("token", token, "username", u.getUsername(), "role", u.getRole()));
     }
 
     @GetMapping("/me")
     public ResponseEntity<?> me(@RequestHeader(value="Authorization", required=false) String auth) {
-        if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).body("Missing token.");
+        if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).body(Map.of("detail", "Missing token."));
         String token = auth.substring(7);
         try {
             Claims c = jwt.parse(token);
             Long uid = c.get("uid", Long.class);
-            if (uid == null) return ResponseEntity.status(401).body("Invalid token payload.");
+            if (uid == null) return ResponseEntity.status(401).body(Map.of("detail", "Invalid token payload."));
             
             Optional<User> maybe = users.findById(uid);
-            if (maybe.isEmpty()) return ResponseEntity.status(401).body("User no longer exists.");
+            if (maybe.isEmpty()) return ResponseEntity.status(401).body(Map.of("detail", "User no longer exists."));
             
             User u = maybe.get();
             return ResponseEntity.ok(Map.of("id", u.getId(), "username", u.getUsername(), "email", u.getEmail()));
         } catch (Exception e) {
-            return ResponseEntity.status(401).body("Token expired or invalid: " + e.getMessage());
+            return ResponseEntity.status(401).body(Map.of("detail", "Token expired or invalid."));
         }
     }
 

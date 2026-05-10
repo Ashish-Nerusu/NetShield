@@ -9,3 +9,4 @@ joblib==1.4.2
 
 python-multipart==0.0.9
 python-dotenv==1.0.1
+setuptools

@@ -1,0 +1,2 @@
+switch_id,in_port,packet_count,byte_count,duration_sec
+1,2,3000,4000000,5

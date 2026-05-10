@@ -64,50 +64,68 @@ function ManualProbe() {
   };
 
   return (
-    <div className="page-bg-icons bg-manual-probe">
-      <h2>Manual Probe</h2>
-      <div className="input-group"><label>Packet Count</label><input value={form.pktcount} onChange={update('pktcount')} /></div>
-      <div className="input-group"><label>Byte Count</label><input value={form.bytecount} onChange={update('bytecount')} /></div>
-      <div className="input-group"><label>Duration (sec)</label><input value={form.duration} onChange={update('duration')} /></div>
-      <div className="input-group"><label>Flows</label><input value={form.flows} onChange={update('flows')} /></div>
-      <div className="input-group"><label>Packets/sec</label><input value={form.pktpersec} onChange={update('pktpersec')} /></div>
-      <div className="input-group"><label>Priority</label><input value={form.prio} onChange={update('prio')} /></div>
-      <button onClick={submit}>Analyze</button>
-      <button onClick={runExplain} style={{ marginLeft: 8 }}>Explain</button>
+    <div>
+      <h2 style={{ color: 'var(--color-text-primary)', marginBottom: 'var(--spacing-6)' }}>Manual Probe</h2>
+      
+      <div className="card" style={{ marginBottom: 'var(--spacing-6)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+          <div className="input-group"><label className="input-label">Packet Count</label><input className="input-field" value={form.pktcount} onChange={update('pktcount')} /></div>
+          <div className="input-group"><label className="input-label">Byte Count</label><input className="input-field" value={form.bytecount} onChange={update('bytecount')} /></div>
+          <div className="input-group"><label className="input-label">Duration (sec)</label><input className="input-field" value={form.duration} onChange={update('duration')} /></div>
+          <div className="input-group"><label className="input-label">Flows</label><input className="input-field" value={form.flows} onChange={update('flows')} /></div>
+          <div className="input-group"><label className="input-label">Packets/sec</label><input className="input-field" value={form.pktpersec} onChange={update('pktpersec')} /></div>
+          <div className="input-group"><label className="input-label">Priority</label><input className="input-field" value={form.prio} onChange={update('prio')} /></div>
+        </div>
+        <div className="flex gap-3">
+          <button className="btn btn-primary" onClick={submit}>Analyze</button>
+          <button className="btn btn-secondary" onClick={runExplain}>Explain</button>
+        </div>
+      </div>
       {result && (
-        <section className={`result-card ${result.prediction === 'Attack' ? 'alert' : 'safe'}`}>
-          <h3>Result: {result.prediction}</h3>
-          <div className="stats">
-            <p>Threat Score: {Number(((result.threat_score ?? 0) * 100).toFixed(2))}%</p>
-            <p>Severity: {result.prediction === 'Attack' ? 'High' : 'None'}</p>
+        <section className={`card ${result.prediction === 'Attack' ? 'alert' : 'safe'}`} style={{ marginBottom: 'var(--spacing-6)', borderLeft: result.prediction === 'Attack' ? '4px solid var(--color-danger)' : '4px solid var(--color-success)' }}>
+          <h3 style={{ marginTop: 0, color: 'var(--color-text-primary)' }}>Result: {result.prediction}</h3>
+          <div className="flex gap-6 mb-4">
+            <div>
+              <span className="text-xs text-muted">THREAT SCORE</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{Number(((result.threat_score ?? 0) * 100).toFixed(2))}%</div>
+            </div>
+            <div>
+              <span className="text-xs text-muted">SEVERITY</span>
+              <div style={{ fontSize: '1.25rem', fontWeight: 600, color: result.prediction === 'Attack' ? 'var(--color-danger)' : 'var(--color-success)' }}>
+                {result.prediction === 'Attack' ? 'High' : 'None'}
+              </div>
+            </div>
           </div>
-          <p>{result.message}</p>
-          {result.prediction === 'Attack' ? (
-            <ul>
-              <li>Apply rate limiting on high pkt/sec flows.</li>
-              <li>Inspect priority queues for abuse.</li>
-              <li>Block top offenders at the SDN controller.</li>
-            </ul>
-          ) : (
-            <ul>
-              <li>Traffic appears normal.</li>
-              <li>Maintain current policies.</li>
-            </ul>
-          )}
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-4)' }}>{result.message}</p>
+          <div style={{ padding: 'var(--spacing-4)', backgroundColor: 'var(--color-bg-canvas)', borderRadius: 'var(--radius-md)' }}>
+            <h4 style={{ fontSize: '0.875rem', marginBottom: 'var(--spacing-2)' }}>Recommended Actions</h4>
+            {result.prediction === 'Attack' ? (
+              <ul style={{ margin: 0, paddingLeft: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                <li>Apply rate limiting on high pkt/sec flows.</li>
+                <li>Inspect priority queues for abuse.</li>
+                <li>Block top offenders at the SDN controller.</li>
+              </ul>
+            ) : (
+              <ul style={{ margin: 0, paddingLeft: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                <li>Traffic appears normal.</li>
+                <li>Maintain current policies.</li>
+              </ul>
+            )}
+          </div>
         </section>
       )}
       {explain && (
-        <section className="result-card">
-          <h3>Explainability (Top Features)</h3>
+        <section className="card">
+          <h3 style={{ marginTop: 0, marginBottom: 'var(--spacing-4)' }}>Explainability (Top Features)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={explain}>
-              <XAxis dataKey="name" tick={{ fill: '#c9d1d9' }} />
-              <YAxis tick={{ fill: '#c9d1d9' }} />
-              <Tooltip />
-              <Bar dataKey="value" fill="#58a6ff" />
+              <XAxis dataKey="name" tick={{ fill: 'var(--color-text-muted)' }} />
+              <YAxis tick={{ fill: 'var(--color-text-muted)' }} />
+              <Tooltip cursor={{ fill: 'var(--color-bg-canvas)' }} contentStyle={{ backgroundColor: 'var(--color-bg-solid)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }} />
+              <Bar dataKey="value" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-          {explain[0] && <p>High Impact: {explain[0].name} is atypical compared to baseline.</p>}
+          {explain[0] && <p style={{ marginTop: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>High Impact: <strong>{explain[0].name}</strong> is atypical compared to baseline.</p>}
         </section>
       )}
     </div>

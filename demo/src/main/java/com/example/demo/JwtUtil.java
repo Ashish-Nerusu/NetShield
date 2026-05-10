@@ -20,9 +20,8 @@ public class JwtUtil {
     public JwtUtil() {
         String secret = System.getenv("JWT_SECRET");
         if (secret == null || secret.length() < 32) {
-            byte[] rnd = new byte[64];
-            new SecureRandom().nextBytes(rnd);
-            secret = java.util.Base64.getEncoder().encodeToString(rnd);
+            // Stable default secret for local development to prevent logout on restart
+            secret = "bmV0c2hpZWxkLXNlY3VyZS1kZWZhdWx0LXNlY3JldC1rZXktZm9yLWxvY2FsLWRldmVsb3BtZW50Cg==";
         }
         key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }

@@ -11,6 +11,7 @@ import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import { useAuth } from './context/AuthContext';
 import AgentBot from './pages/AgentBot';
+import DashboardOverview from './pages/DashboardOverview';
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
@@ -27,14 +28,17 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route element={<Layout><RequireAuth><Outlet /></RequireAuth></Layout>}>
-          <Route path="/dashboard" element={<UploadPage />} />
-          <Route path="/upload" element={<UploadPage />} />
-          <Route path="/manual" element={<ManualProbe />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/map" element={<LiveMap />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/agent" element={<AgentBot />} />
+          <Route path="/dashboard" element={<Navigate to="/dashboard/overview" replace />} />
+          <Route path="/dashboard/overview" element={<DashboardOverview />} />
+          <Route path="/dashboard/upload" element={<UploadPage />} />
+          <Route path="/dashboard/manual-probe" element={<ManualProbe />} />
+          <Route path="/dashboard/history" element={<HistoryPage />} />
+          <Route path="/dashboard/live-map" element={<LiveMap />} />
+          <Route path="/dashboard/agent" element={<AgentBot />} />
+          <Route path="/dashboard/profile" element={<Profile />} />
+          <Route path="/dashboard/settings" element={<Profile />} />
         </Route>
+        <Route path="/" element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

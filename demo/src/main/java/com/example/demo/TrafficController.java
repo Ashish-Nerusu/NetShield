@@ -20,11 +20,10 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/")
-@CrossOrigin(origins = "https://net-shield-gules.vercel.app", allowCredentials = "true", allowedHeaders = "*")
 public class TrafficController {
 
     @Autowired
-    private HistoryRepository historyRepo;
+    private ThreatEventService threatEventService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -35,10 +34,13 @@ public class TrafficController {
     @Autowired
     private PasswordEncoder encoder;
 
+    @Autowired
+    private AnalysisJobService jobService;
+
     private final String aiBase =
             Optional.ofNullable(System.getenv("AI_ENGINE_URL"))
                     .orElse(Optional.ofNullable(System.getenv("FASTAPI_BASE_URL"))
-                            .orElse("http://localhost:8003"));
+                            .orElse("http://localhost:8000"));
 
     // ================= HEALTH & ROOT =================
 
@@ -126,12 +128,23 @@ public class TrafficController {
         if (auth != null && auth.startsWith("Bearer ")) {
             try {
                 Claims c = jwtUtil.parse(auth.substring(7));
-                Long uid = c.get("uid", Long.class);
-                return ResponseEntity.ok(historyRepo.findByUserId(uid));
+                Object uidObj = c.get("uid");
+                Long uid = null;
+                if (uidObj instanceof Number) {
+                    uid = ((Number) uidObj).longValue();
+                }
+                
+                if (uid != null) {
+                    return ResponseEntity.ok(threatEventService.getHistoryForUser(uid));
+                }
             } catch (Exception ignored) {}
         }
-        // If not logged in, return empty list instead of all data
-        return ResponseEntity.ok(new ArrayList<>());
+        return ResponseEntity.ok(threatEventService.getAllHistory());
+    }
+
+    @GetMapping("/api/netshield/metrics")
+    public ResponseEntity<?> metrics() {
+        return ResponseEntity.ok(threatEventService.getGlobalMetrics());
     }
 
     // ================= GEO =================
@@ -169,56 +182,37 @@ public class TrafficController {
             @RequestHeader(value = "Authorization", required = false) String auth) {
 
         try {
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", file.getResource());
-
-            HttpEntity<MultiValueMap<String, Object>> req =
-                    new HttpEntity<>(body, headers);
-
-            ResponseEntity<Map> response =
-                    postWithRetry(aiBase + "/analyze/sdn/ml", req, Map.class);
-
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-
-                AnalysisHistory h = new AnalysisHistory();
-                h.setFilename(file.getOriginalFilename());
-                h.setResult((String) response.getBody().get("prediction"));
-
-                Object conf = response.getBody().get("confidence_score");
-                if (conf instanceof Number) {
-                    h.setConfidence(((Number) conf).doubleValue());
-                } else {
-                    h.setConfidence(0.0);
-                }
-
-                h.setTimestamp(LocalDateTime.now());
-
-                if (auth != null && auth.startsWith("Bearer ")) {
-                    try {
-                        Claims c = jwtUtil.parse(auth.substring(7));
-                        Long uid = c.get("uid", Long.class);
-                        User u = usersRepo.findById(uid).orElse(null);
-                        h.setUser(u);
-                    } catch (Exception ignored) {}
-                }
-
-                historyRepo.save(h);
+            String jobId = UUID.randomUUID().toString();
+            User user = null;
+            if (auth != null && auth.startsWith("Bearer ")) {
+                try {
+                    Claims c = jwtUtil.parse(auth.substring(7));
+                    Object uidObj = c.get("uid");
+                    Long uid = null;
+                    if (uidObj instanceof Number) {
+                        uid = ((Number) uidObj).longValue();
+                    }
+                    if (uid != null) {
+                        user = usersRepo.findById(uid).orElse(null);
+                    }
+                } catch (Exception ignored) {}
             }
 
-            return response;
+            jobService.submitJob(jobId);
+            jobService.processAnalysis(jobId, aiBase, file.getBytes(), file.getOriginalFilename(), user, client());
+
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of("jobId", jobId));
 
         } catch (Exception e) {
-            String msg = e.getMessage();
-            if (msg != null && (msg.contains("429") || msg.contains("DOCTYPE html"))) {
-                return ResponseEntity.status(429).body("NetShield is currently under heavy load or platform rate-limiting. Please wait 30-60 seconds and try again.");
-            }
-            return ResponseEntity.status(500)
-                    .body("Gatekeeper Error: " + e.getMessage());
+            return ResponseEntity.status(500).body("Gatekeeper Error: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/api/netshield/analysis-status/{jobId}")
+    public ResponseEntity<?> getAnalysisStatus(@PathVariable String jobId) {
+        AnalysisJobService.JobStatus status = jobService.getStatus(jobId);
+        if (status == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(status);
     }
 
     // ================= AUTH =================
@@ -231,9 +225,50 @@ public class TrafficController {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> req = new HttpEntity<>(payload, headers);
             ResponseEntity<Map> response = postWithRetry(aiBase + "/analyze-manual", req, Map.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> body = response.getBody();
+                ThreatEvent event = new ThreatEvent();
+                event.setSourceModule("Manual Probe");
+                event.setFilename("Manual Input");
+                event.setAttackType((String) body.get("prediction"));
+                
+                if (payload.containsKey("sourceIp")) {
+                    event.setSourceIp((String) payload.get("sourceIp"));
+                }
+                if (payload.containsKey("destinationIp")) {
+                    event.setDestinationIp((String) payload.get("destinationIp"));
+                }
+                
+                Object conf = body.get("threat_score");
+                if (conf instanceof Number) {
+                    event.setConfidence(((Number) conf).doubleValue());
+                } else {
+                    event.setConfidence(0.0);
+                }
+                
+                if ("Attack".equalsIgnoreCase(event.getAttackType())) {
+                    if (event.getConfidence() >= 0.9) event.setSeverity("Critical");
+                    else if (event.getConfidence() >= 0.7) event.setSeverity("High");
+                    else event.setSeverity("Medium");
+                } else {
+                    event.setSeverity("Safe");
+                }
+                
+                event.setModelUsed("sdn_hybrid");
+                event.setDatasetType("sdn");
+                threatEventService.saveEvent(event);
+            }
             return response;
         } catch (Exception e) {
             String msg = e.getMessage();
+            if (e instanceof org.springframework.web.client.ResourceAccessException || 
+               (msg != null && (msg.contains("Connection refused") || msg.contains("I/O error")))) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "status", 503,
+                    "error", "ML_SERVICE_OFFLINE",
+                    "message", "FastAPI ML engine is unavailable on port 8000"
+                ));
+            }
             if (msg != null && (msg.contains("429") || msg.contains("DOCTYPE html"))) {
                 return ResponseEntity.status(429).body(Map.of("detail", "NetShield is currently under heavy load or platform rate-limiting. Please wait 30-60 seconds and try again."));
             }
@@ -251,10 +286,36 @@ public class TrafficController {
             return response;
         } catch (Exception e) {
             String msg = e.getMessage();
+            if (e instanceof org.springframework.web.client.ResourceAccessException || 
+               (msg != null && (msg.contains("Connection refused") || msg.contains("I/O error")))) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "status", 503,
+                    "error", "ML_SERVICE_OFFLINE",
+                    "message", "FastAPI ML engine is unavailable on port 8000"
+                ));
+            }
             if (msg != null && (msg.contains("429") || msg.contains("DOCTYPE html"))) {
                 return ResponseEntity.status(429).body(Map.of("detail", "NetShield is currently under heavy load or platform rate-limiting. Please wait 30-60 seconds and try again."));
             }
             return ResponseEntity.status(500).body(Map.of("detail", "Gatekeeper Error: " + e.getMessage()));
+        }
+    }
+
+    // ================= AGENT BOT =================
+
+    @PostMapping("/api/netshield/agent")
+    public ResponseEntity<?> agentBot(@RequestBody Map<String, String> payload) {
+        try {
+            String message = payload.getOrDefault("message", "");
+            if (message.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Message cannot be empty"));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "reply", "NetShield AI Assistant is currently operating in demo mode. I received your message: \"" + message + "\""
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "An internal error occurred."));
         }
     }
 
