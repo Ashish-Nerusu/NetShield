@@ -37,20 +37,20 @@ function HistoryPage() {
       <h2 style={{ color: 'var(--color-text-primary)' }}>Threat Intelligence</h2>
       <div className="ticker">
         <AnimatePresence initial={false}>
-          {ticker.map((t) => (
+          {ticker.map((t, idx) => (
             <motion.div
-              key={t.eventUuid || t.id}
+              key={t.eventUuid || t.id || `ticker-${idx}`}
               className={`tick ${t.attackType !== 'Normal' && t.attackType !== 'Safe' ? 'alert' : 'safe'}`}
               initial={{ x: 300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <span>{new Date(t.timestamp).toLocaleTimeString()}</span>
-              <span>{t.sourceModule}</span>
-              <span>{t.filename}</span>
-              <span>{t.attackType}</span>
-              <span>{Math.round((t.confidence || 0) * 100)}%</span>
+              <span>{t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : 'N/A'}</span>
+              <span>{t.sourceModule || 'Unknown'}</span>
+              <span>{t.filename || 'N/A'}</span>
+              <span>{t.attackType || 'Normal'}</span>
+              <span>{Math.round((Number(t.confidence) || 0) * 100)}%</span>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -131,14 +131,14 @@ function HistoryPage() {
               <tr><th>Time</th><th>Source</th><th>Filename</th><th>Result</th><th>Severity</th><th>Confidence</th></tr>
             </thead>
             <tbody>
-              {rows.slice().reverse().map((r) => (
-                <tr key={r.eventUuid || r.id}>
-                  <td>{new Date(r.timestamp).toLocaleString()}</td>
-                  <td>{r.sourceModule}</td>
-                  <td>{r.filename}</td>
-                  <td><span className={`badge ${r.attackType !== 'Normal' && r.attackType !== 'Safe' ? 'badge-danger' : 'badge-success'}`}>{r.attackType}</span></td>
-                  <td>{r.severity}</td>
-                  <td>{Math.round((r.confidence || 0) * 100)}%</td>
+              {rows.slice().reverse().map((r, idx) => (
+                <tr key={r.eventUuid || r.id || `row-${idx}`}>
+                  <td>{r.timestamp ? new Date(r.timestamp).toLocaleString() : 'N/A'}</td>
+                  <td>{r.sourceModule || 'Unknown'}</td>
+                  <td>{r.filename || 'N/A'}</td>
+                  <td><span className={`badge ${r.attackType !== 'Normal' && r.attackType !== 'Safe' ? 'badge-danger' : 'badge-success'}`}>{r.attackType || 'Normal'}</span></td>
+                  <td>{r.severity || 'Safe'}</td>
+                  <td>{Math.round((Number(r.confidence) || 0) * 100)}%</td>
                 </tr>
               ))}
             </tbody>

@@ -68,19 +68,19 @@ function DashboardOverview() {
     : [];
 
   // 3. Severity Distribution
-  const critical = metrics?.criticalThreats || 0;
-  const high = (metrics?.highSeverityThreats || 0) - critical;
-  const other = (metrics?.totalThreats || 0) - (metrics?.highSeverityThreats || 0);
+  const critical = Number(metrics?.criticalThreats) || 0;
+  const high = (Number(metrics?.highSeverityThreats) || 0) - critical;
+  const other = (Number(metrics?.totalThreats) || 0) - (Number(metrics?.highSeverityThreats) || 0);
   
   const severityDistData = [
-    { name: 'Critical', value: critical },
-    { name: 'High', value: high },
-    { name: 'Medium/Low/Safe', value: other }
+    { name: 'Critical', value: Math.max(0, critical) },
+    { name: 'High', value: Math.max(0, high) },
+    { name: 'Medium/Low/Safe', value: Math.max(0, other) }
   ].filter(d => d.value > 0);
 
   // 4. Top Metrics
-  const activeIncidents = parseInt(metrics?.liveStatusMetrics?.["Active Events"] || "0", 10);
-  const accuracy = metrics?.averageConfidence ? (metrics.averageConfidence * 100).toFixed(1) : "0.0";
+  const activeIncidents = parseInt(metrics?.liveStatusMetrics?.["Active Events"] || "0", 10) || 0;
+  const accuracy = metrics?.averageConfidence ? (Number(metrics.averageConfidence) * 100).toFixed(1) : "0.0";
   const monitoredIps = 12; // Derived mock value as approved
   const activeModelsCount = metrics?.activeModels ? Object.keys(metrics.activeModels).length : 1;
 

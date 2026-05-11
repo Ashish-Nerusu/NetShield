@@ -80,6 +80,8 @@ public class ThreatEventService {
             event.setDstCountry(countries[dstIdx]);
             event.setDstLat(coords[dstIdx][0]);
             event.setDstLng(coords[dstIdx][1]);
+            
+            System.out.println("[ThreatEventService] Assigned mock coordinates. SRC: " + event.getSrcCity() + ", DST: " + event.getDstCity());
         }
 
         // Attach user if not already attached

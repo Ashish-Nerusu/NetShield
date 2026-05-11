@@ -77,17 +77,27 @@ function LiveMap() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
             
-            {incidents.map((incident) => {
+            {incidents.map((incident, idx) => {
               if (incident.srcLat == null || incident.dstLat == null) return null;
+              
+              const sLat = parseFloat(incident.srcLat);
+              const sLng = parseFloat(incident.srcLng);
+              const dLat = parseFloat(incident.dstLat);
+              const dLng = parseFloat(incident.dstLng);
+
+              if (isNaN(sLat) || isNaN(sLng) || isNaN(dLat) || isNaN(dLng)) {
+                return null;
+              }
               
               const color = getSeverityColor(incident.severity);
               const isAttack = incident.severity !== 'Safe' && incident.severity !== 'None';
+              const key = incident.eventUuid || `fallback-key-${idx}`;
               
               return (
-                <React.Fragment key={incident.eventUuid}>
+                <React.Fragment key={key}>
                   {/* Source Node */}
                   <CircleMarker
-                    center={[incident.srcLat, incident.srcLng]}
+                    center={[sLat, sLng]}
                     radius={isAttack ? 7 : 5}
                     pathOptions={{ color, fillColor: color, fillOpacity: 0.8 }}
                   >
@@ -104,7 +114,7 @@ function LiveMap() {
 
                   {/* Destination Node */}
                   <CircleMarker
-                    center={[incident.dstLat, incident.dstLng]}
+                    center={[dLat, dLng]}
                     radius={5}
                     pathOptions={{ color: 'var(--color-primary)', fillColor: 'var(--color-primary)', fillOpacity: 0.8 }}
                   >
@@ -120,8 +130,8 @@ function LiveMap() {
                   {/* Attack Flow Line */}
                   <Polyline
                     positions={[
-                      [incident.srcLat, incident.srcLng], 
-                      [incident.dstLat, incident.dstLng]
+                      [sLat, sLng], 
+                      [dLat, dLng]
                     ]}
                     pathOptions={{ color, weight: isAttack ? 2 : 1 }}
                     className={isAttack ? 'animated-flow-line' : 'static-flow-line'}

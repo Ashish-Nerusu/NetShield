@@ -136,17 +136,23 @@ public class TrafficController {
                 }
                 
                 if (uid != null) {
-                    return ResponseEntity.ok(threatEventService.getHistoryForUser(uid));
+                    List<ThreatEventDTO> hist = threatEventService.getHistoryForUser(uid);
+                    System.out.println("[TrafficController] History returned count for user: " + (hist != null ? hist.size() : 0));
+                    return ResponseEntity.ok(hist);
                 }
             } catch (Exception ignored) {}
         }
-        return ResponseEntity.ok(threatEventService.getAllHistory());
+        List<ThreatEventDTO> allHist = threatEventService.getAllHistory();
+        System.out.println("[TrafficController] History returned global count: " + (allHist != null ? allHist.size() : 0));
+        return ResponseEntity.ok(allHist);
     }
 
     @GetMapping("/api/netshield/metrics")
     public ResponseEntity<?> getMetrics() {
         System.out.println("[TrafficController] Serving /api/netshield/metrics request");
-        return ResponseEntity.ok(threatEventService.getGlobalMetrics());
+        MetricsDTO metrics = threatEventService.getGlobalMetrics();
+        System.out.println("[TrafficController] Metrics returned. Total threats: " + metrics.getTotalThreats() + ", Recent incidents count: " + (metrics.getRecentIncidents() != null ? metrics.getRecentIncidents().size() : 0));
+        return ResponseEntity.ok(metrics);
     }
 
     // ================= GEO =================
