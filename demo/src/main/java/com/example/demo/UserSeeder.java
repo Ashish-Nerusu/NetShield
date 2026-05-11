@@ -20,7 +20,7 @@ public class UserSeeder implements CommandLineRunner {
             User u = new User();
             u.setUsername("admin");
             u.setEmail("admin@netshield.com");
-            u.setPasswordHash(encoder.encode("password123"));
+            u.setPassword(encoder.encode("password123"));
             users.save(u);
             System.out.println("✅ Seeder: Default user 'admin' created.");
         }
