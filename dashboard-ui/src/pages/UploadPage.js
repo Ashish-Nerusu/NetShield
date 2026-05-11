@@ -80,7 +80,10 @@ function UploadPage() {
             startRetryTimer();
           }
           setLoading(false);
-          alert(`Polling failed: ${pollError.message}`);
+          setResult({
+            prediction: 'Error',
+            message: `Polling failed: ${pollError.message}. Ensure backend is awake.`
+          });
         }
       };
 
@@ -91,11 +94,10 @@ function UploadPage() {
       if (status === 429) {
         startRetryTimer();
       }
-      const statusText = error.response?.statusText;
-      const url = error.config?.url || analyzeUrl;
-      const body = error.response?.data;
-      const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
-      alert(`Upload failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || error.message}`);
+      setResult({
+        prediction: 'Error',
+        message: status === 429 ? 'Rate limit exceeded. Try again.' : `Upload failed: ${error.message}. Ensure backend is awake.`
+      });
       setLoading(false);
     }
   };

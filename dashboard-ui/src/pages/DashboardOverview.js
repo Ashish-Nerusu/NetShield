@@ -26,8 +26,8 @@ function DashboardOverview() {
 
   useEffect(() => {
     fetchMetrics();
-    // Polling every 10 seconds
-    const interval = setInterval(fetchMetrics, 10000);
+    // Polling every 30 seconds
+    const interval = setInterval(fetchMetrics, 30000);
     return () => clearInterval(interval);
   }, []);
 

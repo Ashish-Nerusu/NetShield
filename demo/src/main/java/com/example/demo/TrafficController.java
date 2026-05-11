@@ -124,6 +124,7 @@ public class TrafficController {
     @GetMapping("/api/netshield/history")
     public ResponseEntity<?> history(
             @RequestHeader(value = "Authorization", required = false) String auth) {
+        System.out.println("[TrafficController] Serving /api/netshield/history request");
 
         if (auth != null && auth.startsWith("Bearer ")) {
             try {
@@ -143,7 +144,8 @@ public class TrafficController {
     }
 
     @GetMapping("/api/netshield/metrics")
-    public ResponseEntity<?> metrics() {
+    public ResponseEntity<?> getMetrics() {
+        System.out.println("[TrafficController] Serving /api/netshield/metrics request");
         return ResponseEntity.ok(threatEventService.getGlobalMetrics());
     }
 
@@ -220,6 +222,7 @@ public class TrafficController {
 
     @PostMapping("/api/netshield/analyze-manual")
     public ResponseEntity<?> analyzeManual(@RequestBody Map<String, Object> payload) {
+        System.out.println("[TrafficController] Received manual analysis probe");
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);

@@ -5,6 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "threat_events", indexes = {
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
     @Index(name = "idx_threat_event_attack_type", columnList = "attackType")
 })
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ThreatEvent {
     
     @Id

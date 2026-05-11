@@ -48,7 +48,7 @@ function LiveMap() {
 
   useEffect(() => {
     fetchIncidents();
-    const id = setInterval(fetchIncidents, 5000); // 5 sec polling
+    const id = setInterval(fetchIncidents, 30000); // 30 sec polling
     return () => clearInterval(id);
   }, []);
 

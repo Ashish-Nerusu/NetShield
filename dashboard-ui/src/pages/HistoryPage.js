@@ -29,8 +29,7 @@ function HistoryPage() {
       }
     };
     run();
-    const id = setInterval(run, 5000);
-    return () => clearInterval(id);
+    // Polling disabled to reduce backend load and prevent Render rate limiting.
   }, []);
 
   return (

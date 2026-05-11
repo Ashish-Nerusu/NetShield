@@ -31,11 +31,13 @@ function ManualProbe() {
       setResult(res.data);
     } catch (err) {
       const status = err.response?.status;
-      const statusText = err.response?.statusText;
-      const url = err.config?.url || (API_BASE + `/api/netshield/analyze-manual`);
-      const body = err.response?.data;
-      const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
-      alert(`Manual analyze failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);
+      setResult({
+        prediction: 'Error',
+        message: status === 429 
+          ? 'Rate limit exceeded. Please wait a moment.' 
+          : `ML Engine Error: ${err.message}. Ensure backend is awake.`,
+        threat_score: 0
+      });
     }
   };
   const runExplain = async () => {
@@ -55,11 +57,13 @@ function ManualProbe() {
       setExplain(data.slice(0, 10));
     } catch (err) {
       const status = err.response?.status;
-      const statusText = err.response?.statusText;
-      const url = err.config?.url || (API_BASE + `/api/netshield/explain-manual`);
-      const body = err.response?.data;
-      const bodyText = typeof body === 'string' ? body.slice(0, 800) : JSON.stringify(body);
-      alert(`Explain failed:\nHTTP ${status ?? '—'} ${statusText ?? ''}\nURL: ${url}\n${bodyText || err.message}`);
+      setResult({
+        prediction: 'Error',
+        message: status === 429 
+          ? 'Rate limit exceeded. Please wait a moment.' 
+          : `Explain Error: ${err.message}. Ensure backend is awake.`,
+        threat_score: 0
+      });
     }
   };
 
